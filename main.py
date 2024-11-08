@@ -33,7 +33,7 @@ def run_test(test_folder_path: str, test_video_name: str):
         out_file.write(sequence + "\n")
     out_file.close()
 
-def run_all_test(test_folder_path: str):
+def run_all_tests(test_folder_path: str):
     counter: int = 0
     in_files = listdir(test_folder_path)
     for file in in_files:
@@ -42,5 +42,5 @@ def run_all_test(test_folder_path: str):
         run_test(test_folder_path, file)
 
 if __name__ == '__main__':
-    # run_test("./tests", "0119.mp4")
-    run_all_test("./tests/4-Key")
+    # run_test("./tests/4-Key", "0152.mp4")
+    run_all_tests("./tests/4-Key")
