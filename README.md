@@ -52,3 +52,22 @@ If you want to run a single test, comment out the line with *run_all_tests* and 
 ### Running Multiple Tests
 
 If you want to run a large batch of tests contained in the same directory, simply comment out the line with *run_test* and replace *PATH_TO_DIRECTORY_OF_VIDEO_FILES* with the correct path on your computer.
+
+### Finding Output
+
+Once the test case(s) have concluded, the results will be saved to a text file under the same name as the input video file in a folder in the current working directory called *output*. This file will contain a list containing all the inferred candidates for the completed test case.
+
+### Labelling Video Frames (TEMPORARY)
+
+In the file *test_label.py* ensure that all the tests cases you intend to run have been properly added to the *get_label* method with the correct keypress event frames returned in chronological order.
+
+## Gathering Results
+
+Using the *gen_results.py* file, you can gather the Gini coefficient and entropies for a list of test cases run. Firstly, navigate to the portion of the code at the bottom of the file as seen below:
+
+```python
+if __name__ == '__main__':
+    main(OUTPUT_DIRECTORY_PATH)
+```
+
+Then change the *OUTPUT_DIRECTORY_PATH* argument with a string path to the directory containing the test case output files.
