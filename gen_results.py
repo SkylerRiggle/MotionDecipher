@@ -26,6 +26,9 @@ class TestDatum:
     def is_success(self) -> bool:
         return self.__is_success
 
+    def get_num_candidates(self) -> int:
+        return self.__num_candidates
+
     def calculate_entropy(self) -> float:
         return log2(self.__num_candidates)
 
@@ -89,9 +92,13 @@ def main(output_dir: str = "./output"):
     print(f"Unable to infer {num_fail} pins")
     print(f"Overall success rate of: {100.0 * num_success / (num_success + num_fail)}%\n")
 
+    success_count = [case.get_num_candidates() for case in success_cases]
+    fail_count = [case.get_num_candidates() for case in fail_cases]
     success_entropy = [case.calculate_entropy() for case in success_cases]
     fail_entropy = [case.calculate_entropy() for case in fail_cases]
 
+    success_count.sort()
+    fail_count.sort()
     success_entropy.sort()
     fail_entropy.sort()
 
@@ -101,6 +108,18 @@ def main(output_dir: str = "./output"):
     print(f"""Failure Cases Gini Coefficient: {
         calculate_gini_coefficient(fail_entropy, len(fail_cases[0].get_target()))
     }""")
+
+    plt.title("Candidate List Size")
+    plt.ylabel("Number of Candidates")
+    plt.xlabel("Test Video Index")
+    plt.bar([idx for idx in range(1, num_success + 1)], success_count)
+    plt.show()
+
+    plt.title("Failure Cases Candidate List Size")
+    plt.ylabel("Number of Candidates")
+    plt.xlabel("Test Video Index")
+    plt.bar([idx for idx in range(1, num_fail + 1)], fail_count)
+    plt.show()
 
     plt.title("Entropy")
     plt.ylabel("Entropy")
