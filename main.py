@@ -42,5 +42,5 @@ def run_all_tests(test_folder_path: str):
         run_test(test_folder_path, file)
 
 if __name__ == '__main__':
-    # run_test("./tests/4-Key", "0152.mp4")
+    # run_test("./tests", "0119.mp4")
     run_all_tests("./tests/4-Key")

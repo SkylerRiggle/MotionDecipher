@@ -167,17 +167,6 @@ class Keypad:
                 self.__distance_map[idx][jdx] = distance
                 self.__distance_map[jdx][idx] = distance
 
-    def __get_all_key_pairs__(self) -> list[tuple[tuple[float, float], tuple[float, float]]]:
-        key_pairs = []
-        for idx in range(len(self.__key_list)):
-            for jdx in range(idx, len(self.__key_list)):
-                key_pairs.append((
-                    self.__key_list[idx].get_center(),
-                    self.__key_list[jdx].get_center()
-                ))
-
-        return key_pairs
-
     def __angle_correlation__(
         self,
         input_points: list[tuple[float, float]],
@@ -225,37 +214,97 @@ class Keypad:
     ) -> set[str]:
         candidates: set[str] = set()
 
-        last_point = input_points[0]
-        cur_sequences = [[idx] for idx in range(len(self.__key_list))]
-        for cur_point in input_points[1:]:
-            new_sequences = []
-            dx = abs(cur_point[0] - last_point[0])
-            dy = abs(cur_point[1] - last_point[1])
+        max_point_1 = (0.0, 0.0)
+        max_point_2 = (0.0, 0.0)
+        max_dist: float = 0.0
 
-            for sequence in cur_sequences:
-                last_key_idx = sequence[-1]
-
-                for key_idx in range(len(self.__key_list)):
-                    if (
-                        abs(dx - self.__distance_map[last_key_idx][key_idx][0]) <= distance_ambiguous_region[0]
-                        and
-                        abs(dy - self.__distance_map[last_key_idx][key_idx][1]) <= distance_ambiguous_region[1]
-                    ):
-                        new_sequences.append(sequence + [key_idx])
-
-            cur_sequences = new_sequences
-
-            last_point = cur_point
-
-        for sequence in cur_sequences:
-            last_key_id = None
-            candidate: str = ""
-            for key_idx in sequence:
-                candidate, last_key_id = self.__key_list[key_idx].press(
-                    candidate, last_key_id
+        for idx_1 in range(len(input_points) - 1):
+            point_1 = input_points[idx_1]
+            for idx_2 in range(idx_1 + 1, len(input_points)):
+                point_2 = input_points[idx_2]
+                cur_dist = (
+                    abs(point_1[0] - point_2[0]) +
+                    abs(point_1[1] - point_2[1])
                 )
 
-            candidates.add(candidate)
+                if cur_dist > max_dist:
+                    max_dist = cur_dist
+                    max_point_1 = point_1
+                    max_point_2 = point_2
+
+        for kdx_1 in range(len(self.__key_list)):
+            key_1 = self.__key_list[kdx_1].get_center()
+            for kdx_2 in range(len(self.__key_list)):
+                key_2 = self.__key_list[kdx_2].get_center()
+
+                s_x = (key_1[0] - key_2[0]) / (max_point_1[0] - max_point_2[0])
+                s_y = (key_1[1] - key_2[1]) / (max_point_1[1] - max_point_2[1])
+
+                last_point = input_points[0]
+                cur_sequences = [[idx] for idx in range(len(self.__key_list))]
+                for cur_point in input_points[1:]:
+                    new_sequences = []
+
+                    dx = s_x * abs(cur_point[0] - last_point[0])
+                    dy = s_y * abs(cur_point[1] - last_point[1])
+
+                    for sequence in cur_sequences:
+                        last_key_idx = sequence[-1]
+
+                        for key_idx in range(len(self.__key_list)):
+                            if (
+                                    abs(dx - self.__distance_map[last_key_idx][key_idx][0]) <=
+                                    distance_ambiguous_region[0]
+                                    and
+                                    abs(dy - self.__distance_map[last_key_idx][key_idx][1]) <=
+                                    distance_ambiguous_region[1]
+                            ):
+                                new_sequences.append(sequence + [key_idx])
+
+                    cur_sequences = new_sequences
+                    last_point = cur_point
+
+                for sequence in cur_sequences:
+                    last_key_id = None
+                    candidate: str = ""
+                    for key_idx in sequence:
+                        candidate, last_key_id = self.__key_list[key_idx].press(
+                            candidate, last_key_id
+                        )
+
+                    candidates.add(candidate)
+
+        # last_point = input_points[0]
+        # cur_sequences = [[idx] for idx in range(len(self.__key_list))]
+        # for cur_point in input_points[1:]:
+        #     new_sequences = []
+        #     dx = abs(cur_point[0] - last_point[0])
+        #     dy = abs(cur_point[1] - last_point[1])
+        #
+        #     for sequence in cur_sequences:
+        #         last_key_idx = sequence[-1]
+        #
+        #         for key_idx in range(len(self.__key_list)):
+        #             if (
+        #                 abs(dx - self.__distance_map[last_key_idx][key_idx][0]) <= distance_ambiguous_region[0]
+        #                 and
+        #                 abs(dy - self.__distance_map[last_key_idx][key_idx][1]) <= distance_ambiguous_region[1]
+        #             ):
+        #                 new_sequences.append(sequence + [key_idx])
+        #
+        #     cur_sequences = new_sequences
+        #
+        #     last_point = cur_point
+        #
+        # for sequence in cur_sequences:
+        #     last_key_id = None
+        #     candidate: str = ""
+        #     for key_idx in sequence:
+        #         candidate, last_key_id = self.__key_list[key_idx].press(
+        #             candidate, last_key_id
+        #         )
+        #
+        #     candidates.add(candidate)
 
         return candidates
 
@@ -274,6 +323,9 @@ class Keypad:
             input_points,
             angle_ambiguous_region
         )
+
+        if len(input_points) == 2:
+            return list(angle_candidates)
 
         distance_candidates: set[str] = self.__distance_correlation__(
             input_points,
