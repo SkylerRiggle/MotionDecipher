@@ -274,38 +274,6 @@ class Keypad:
 
                     candidates.add(candidate)
 
-        # last_point = input_points[0]
-        # cur_sequences = [[idx] for idx in range(len(self.__key_list))]
-        # for cur_point in input_points[1:]:
-        #     new_sequences = []
-        #     dx = abs(cur_point[0] - last_point[0])
-        #     dy = abs(cur_point[1] - last_point[1])
-        #
-        #     for sequence in cur_sequences:
-        #         last_key_idx = sequence[-1]
-        #
-        #         for key_idx in range(len(self.__key_list)):
-        #             if (
-        #                 abs(dx - self.__distance_map[last_key_idx][key_idx][0]) <= distance_ambiguous_region[0]
-        #                 and
-        #                 abs(dy - self.__distance_map[last_key_idx][key_idx][1]) <= distance_ambiguous_region[1]
-        #             ):
-        #                 new_sequences.append(sequence + [key_idx])
-        #
-        #     cur_sequences = new_sequences
-        #
-        #     last_point = cur_point
-        #
-        # for sequence in cur_sequences:
-        #     last_key_id = None
-        #     candidate: str = ""
-        #     for key_idx in sequence:
-        #         candidate, last_key_id = self.__key_list[key_idx].press(
-        #             candidate, last_key_id
-        #         )
-        #
-        #     candidates.add(candidate)
-
         return candidates
 
     def infer_candidates(
