@@ -1582,5 +1582,33 @@ def get_label(target_sequence: str) -> list[tuple[int, int, bool]]:
                 (294, 302, True),
                 (449, 455, True),
             ]
+        case "385186":
+            return [
+                (37, 54, True),
+                (504, 519, True),
+                (891, 905, True),
+                (1299, 1311, True),
+                (1730, 1741, True),
+                (2126, 2138, True),
+            ]
+        case "022131":
+            return [
+                (75, 88, True),
+                (326, 338, True),
+                (572, 581, True),
+                (814, 825, True),
+                (1083, 1094, True),
+                (1483, 1497, True),
+            ]
+        case "350697":
+            return [
+                (50, 65, True),
+                (308, 321, True),
+                (572, 584, True),
+                (959, 972, True),
+                (1294, 1305, True),
+                (1641, 1653, True),
+            ]
+
 
     return []
