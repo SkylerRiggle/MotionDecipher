@@ -37,21 +37,15 @@ The arguments are detailed as follows:
 
 ## Running The Example
 
-To run the example *main.py* file, simply navigate to the following portion of code at the bottom of the code:
-
-```python
-if __name__ == '__main__':
-    run_test("PATH_TO_DIRECTORY_OF_VIDEO_FILE", "NAME_OF_VIDEO_FILE")
-    run_all_tests("PATH_TO_DIRECTORY_OF_VIDEO_FILES")
-```
+OUTDATED WILL REWRITE
 
 ### Running Single Tests
 
-If you want to run a single test, comment out the line with *run_all_tests* and replace the two arguments to *run_test*: PATH_TO_DIRECTORY_OF_VIDEO_FILE should be the path to the directory with your input video file; NAME_OF_VIDEO_FILE should be the name of the video file you'd like to test with.
+OUTDATED WILL REWRITE
 
 ### Running Multiple Tests
 
-If you want to run a large batch of tests contained in the same directory, simply comment out the line with *run_test* and replace *PATH_TO_DIRECTORY_OF_VIDEO_FILES* with the correct path on your computer.
+OUTDATED WILL REWRITE
 
 ### Finding Output
 
@@ -63,11 +57,4 @@ In the file *test_label.py* ensure that all the tests cases you intend to run ha
 
 ## Gathering Results
 
-Using the *gen_results.py* file, you can gather the Gini coefficient and entropies for a list of test cases run. Firstly, navigate to the portion of the code at the bottom of the file as seen below:
-
-```python
-if __name__ == '__main__':
-    main(OUTPUT_DIRECTORY_PATH)
-```
-
-Then change the *OUTPUT_DIRECTORY_PATH* argument with a string path to the directory containing the test case output files.
+OUTDATED WILL REWRITE

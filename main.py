@@ -1,3 +1,4 @@
+from sys import argv
 from os import listdir, mkdir
 from test_labels import get_label
 from os.path import join, exists, isdir
@@ -42,5 +43,21 @@ def run_all_tests(test_folder_path: str):
         run_test(test_folder_path, file)
 
 if __name__ == '__main__':
-    # run_test("./tests/4-Key", "0119.mp4")
-    run_all_tests("./tests/5-Key")
+    test_directory: str | None = None
+    test_filename: str | None = None
+
+    for arg in argv:
+        if arg.startswith("dir="):
+            test_directory = arg.replace("dir=", "").strip()
+        elif arg.startswith("file="):
+            test_filename = arg.replace("file=", "").strip()
+
+
+    if test_directory is None:
+        print("No Input Directory Specified...")
+        quit(-1)
+
+    if test_filename is not None:
+        run_test(test_directory, test_filename)
+    else:
+        run_all_tests(test_directory)

@@ -1,3 +1,4 @@
+from sys import argv
 from math import log2
 from os import listdir
 from os.path import isdir, join
@@ -33,7 +34,7 @@ class TestDatum:
         return log2(self.__num_candidates)
 
     def calculate_top_k(self, k: int) -> float:
-        return k / self.__num_candidates
+        return min(k / self.__num_candidates, 1.0)
 
 def gather_test_data(output_dir: str) -> list[TestDatum]:
     if not isdir(output_dir):
@@ -61,7 +62,7 @@ def gather_test_data(output_dir: str) -> list[TestDatum]:
 
     return test_data
 
-def calculate_gini_coefficient(entropies: list[float], num_digits: int) -> float:
+def calculate_gini_coefficient(entropies: list[float]) -> float:
     entropy_diff: float = 0.0
     entropy_sum: float = 0.0
     for entropy_i in entropies:
@@ -90,43 +91,40 @@ def main(output_dir: str = "./output"):
 
     num_success = len(success_cases)
     num_fail = len(fail_cases)
+    total_cases = num_success + num_fail
 
-    num_digits = len(fail_cases[0].get_target())
+    if total_cases == 0:
+        print("No cases processed...")
+        return
+
+    if num_success > 0:
+        num_digits = len(success_cases[0].get_target())
+    else:
+        num_digits = len(fail_cases[0].get_target())
 
     print(f"\nFound {num_success} pins successfully")
     print(f"Unable to infer {num_fail} pins")
-    print(f"Overall success rate of: {100.0 * num_success / (num_success + num_fail)}%\n")
+    print(f"Overall success rate of: {100.0 * num_success / total_cases}%\n")
+
+    if num_success == 0:
+        return
 
     success_count = [case.get_num_candidates() for case in success_cases]
-    fail_count = [case.get_num_candidates() for case in fail_cases]
     success_entropy = [case.calculate_entropy() for case in success_cases]
-    fail_entropy = [case.calculate_entropy() for case in fail_cases]
 
     success_count.sort()
-    fail_count.sort()
     success_entropy.sort()
-    fail_entropy.sort()
 
-    print(f"""Successful Cases Gini Coefficient: {
-        calculate_gini_coefficient(success_entropy, num_digits)
-    }""")
-    print(f"""Failure Cases Gini Coefficient: {
-        calculate_gini_coefficient(fail_entropy, num_digits)
+    print(f"""Gini Coefficient: {
+        calculate_gini_coefficient(success_entropy)
     }""")
 
     success_indices = [idx for idx in range(1, num_success + 1)]
-    fail_indices = [idx for idx in range(1, num_fail + 1)]
 
     plt.title("Candidate List Size")
     plt.ylabel("Number of Candidates")
     plt.xlabel("Test Video Index")
     plt.bar(success_indices, success_count)
-    plt.show()
-
-    plt.title("Failure Cases Candidate List Size")
-    plt.ylabel("Number of Candidates")
-    plt.xlabel("Test Video Index")
-    plt.bar(fail_indices, fail_count)
     plt.show()
 
     prior_entropy = log2(10**num_digits)
@@ -149,57 +147,29 @@ def main(output_dir: str = "./output"):
     plt.legend()
     plt.show()
 
-    plt.title("Failure Cases Entropy")
-    plt.ylabel("Entropy")
+    k_values: list[int] = [10, 100, 250, 500]
+    top_k_success: list[tuple[int, list[float]]] = [
+        (k, [case.calculate_top_k(k) for case in success_cases])
+        for k in k_values
+    ]
+
+    plt.title("Top K Accuracy")
+    plt.ylabel("Accuracy")
     plt.xlabel("Test Video Index")
-    plt.plot(
-        [fail_indices[0], fail_indices[-1]],
-        [prior_entropy, prior_entropy],
-        label="Entropy /WO Attack",
-        color="#ff0000"
-    )
-    plt.plot(
-        fail_indices,
-        fail_entropy,
-        label="Entropy /W Attack",
-        color="#0000ff"
-    )
+    for k, accuracies in top_k_success:
+        plt.plot(success_indices, accuracies, label=f"Top {k}")
     plt.legend()
     plt.show()
 
-    # top_1_success = [case.calculate_top_k(1) for case in success_cases]
-    # top_5_success = [case.calculate_top_k(5) for case in success_cases]
-    # top_10_success = [case.calculate_top_k(10) for case in success_cases]
-    #
-    # top_1_success.sort()
-    # top_5_success.sort()
-    # top_10_success.sort()
-    #
-    # top_1_fail = [case.calculate_top_k(1) for case in fail_cases]
-    # top_5_fail = [case.calculate_top_k(5) for case in fail_cases]
-    # top_10_fail = [case.calculate_top_k(10) for case in fail_cases]
-    #
-    # top_1_fail.sort()
-    # top_5_fail.sort()
-    # top_10_fail.sort()
-    #
-    # plt.title("Top K Accuracy")
-    # plt.ylabel("Accuracy")
-    # plt.xlabel("Test Video Index")
-    # plt.plot(success_indices, top_1_success, label="Top 1", color="#ff0000")
-    # plt.plot(success_indices, top_5_success, label="Top 5", color="#00ff00")
-    # plt.plot(success_indices, top_10_success, label="Top 10", color="#0000ff")
-    # plt.legend()
-    # plt.show()
-    #
-    # plt.title("Failure Top K Accuracy")
-    # plt.ylabel("Accuracy")
-    # plt.xlabel("Test Video Index")
-    # plt.plot(fail_indices, top_1_fail, label="Top 1", color="#ff0000")
-    # plt.plot(fail_indices, top_5_fail, label="Top 5", color="#00ff00")
-    # plt.plot(fail_indices, top_10_fail, label="Top 10", color="#0000ff")
-    # plt.legend()
-    # plt.show()
-
 if __name__ == '__main__':
-    main("./output/5-Key")
+    in_directory: str | None = None
+
+    for arg in argv:
+        if arg.startswith("dir="):
+            in_directory = arg.replace("dir=", "").strip()
+
+    if in_directory is None:
+        print("No Input Directory Specified...")
+        quit(-1)
+
+    main(in_directory)

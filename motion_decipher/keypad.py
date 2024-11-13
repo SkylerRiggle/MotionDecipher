@@ -45,14 +45,29 @@ class Direction:
         return "?"
 
     @staticmethod
-    def angle_to_direction(
-        radian: float,
+    def points_to_direction(
+        point_a: tuple[float, float],
+        point_b: tuple[float, float],
         ambiguous_region: float = 15.0
     ) -> list[int]:
-        degree = radian * 180.0 / pi
-        while degree < 0.0:
-            degree += 360.0
-        degree %= 360.0
+        dx = point_b[0] - point_a[0]
+        dy = point_b[1] - point_a[1]
+
+        if dx == 0.0:
+            if dy > 0.0:
+                degree = 90
+            else:
+                degree = 270
+        elif dy == 0.0:
+            if dx > 0.0:
+                degree = 0
+            else:
+                degree = 180
+        else:
+            degree = atan2(dy, dx) * 180.0 / pi
+            while degree < 0.0:
+                degree += 360.0
+            degree %= 360.0
 
         unambiguous_region = max(
             min(360.0, 360.0 - 8 * ambiguous_region), 0.0
@@ -142,8 +157,9 @@ class Keypad:
                     continue
 
                 key_2 = self.__key_list[jdx].get_center()
-                for direction in Direction.angle_to_direction(
-                    atan2(key_2[1] - key_1[1], key_2[0] - key_1[0]),
+                for direction in Direction.points_to_direction(
+                    key_1,
+                    key_2,
                     0.0
                 ):
                     self.__angle_map[idx][direction].append(jdx)
@@ -167,51 +183,17 @@ class Keypad:
                 self.__distance_map[idx][jdx] = distance
                 self.__distance_map[jdx][idx] = distance
 
-    def __angle_correlation__(
+    def infer_candidates(
         self,
         input_points: list[tuple[float, float]],
-        angle_ambiguous_region: float
-    ) -> set[str]:
-        candidates: set[str] = set()
-
-        last_point = input_points[0]
-        directions: list[list[int]] = []
-        for point in input_points[1:]:
-            directions.append(Direction.angle_to_direction(atan2(
-                point[1] - last_point[1], point[0] - last_point[0]
-            ), angle_ambiguous_region))
-
-            last_point = point
-
-        cur_sequences = [[idx] for idx in range(len(self.__key_list))]
-        for dir_list in directions:
-            new_sequences = []
-            for direction in dir_list:
-                for sequence in cur_sequences:
-                    last_key_idx = sequence[-1]
-                    new_sequences.append(sequence + [last_key_idx])
-                    for key_idx in self.__angle_map[last_key_idx][direction]:
-                        new_sequences.append(sequence + [key_idx])
-
-            cur_sequences = new_sequences
-
-        for sequence in cur_sequences:
-            last_key_id = None
-            candidate: str = ""
-            for idx in sequence:
-                candidate, last_key_id = self.__key_list[idx].press(
-                    candidate, last_key_id
-                )
-
-            candidates.add(candidate)
-
-        return candidates
-
-    def __distance_correlation__(
-        self,
-        input_points: list[tuple[float, float]],
+        angle_ambiguous_region: float,
         distance_ambiguous_region: tuple[float, float]
-    ) -> set[str]:
+    ) -> list[str]:
+        if len(input_points) == 0:
+            return []
+        elif len(input_points) == 1:
+            return [key.press("")[0] for key in self.__key_list]
+
         candidates: set[str] = set()
 
         max_point_1 = (0.0, 0.0)
@@ -223,8 +205,8 @@ class Keypad:
             for idx_2 in range(idx_1 + 1, len(input_points)):
                 point_2 = input_points[idx_2]
                 cur_dist = (
-                    abs(point_1[0] - point_2[0]) +
-                    abs(point_1[1] - point_2[1])
+                        abs(point_1[0] - point_2[0]) +
+                        abs(point_1[1] - point_2[1])
                 )
 
                 if cur_dist > max_dist:
@@ -240,6 +222,9 @@ class Keypad:
                 s_x = (key_1[0] - key_2[0]) / (max_point_1[0] - max_point_2[0])
                 s_y = (key_1[1] - key_2[1]) / (max_point_1[1] - max_point_2[1])
 
+                if s_x < 0.0 or s_y < 0.0:
+                    continue
+
                 last_point = input_points[0]
                 cur_sequences = [[idx] for idx in range(len(self.__key_list))]
                 for cur_point in input_points[1:]:
@@ -247,19 +232,34 @@ class Keypad:
 
                     dx = s_x * abs(cur_point[0] - last_point[0])
                     dy = s_y * abs(cur_point[1] - last_point[1])
+                    cur_directions = Direction.points_to_direction(
+                        (last_point[0] * s_x, last_point[1] * s_y),
+                        (cur_point[0] * s_x, cur_point[1] * s_y),
+                        angle_ambiguous_region
+                    )
 
                     for sequence in cur_sequences:
                         last_key_idx = sequence[-1]
 
-                        for key_idx in range(len(self.__key_list)):
-                            if (
+                        if (
+                            abs(dx - self.__distance_map[last_key_idx][last_key_idx][0]) <=
+                            distance_ambiguous_region[0]
+                            and
+                            abs(dy - self.__distance_map[last_key_idx][last_key_idx][1]) <=
+                            distance_ambiguous_region[1]
+                        ):
+                            new_sequences.append(sequence + [last_key_idx])
+
+                        for direction in cur_directions:
+                            for key_idx in self.__angle_map[last_key_idx][direction]:
+                                if (
                                     abs(dx - self.__distance_map[last_key_idx][key_idx][0]) <=
                                     distance_ambiguous_region[0]
                                     and
                                     abs(dy - self.__distance_map[last_key_idx][key_idx][1]) <=
                                     distance_ambiguous_region[1]
-                            ):
-                                new_sequences.append(sequence + [key_idx])
+                                ):
+                                    new_sequences.append(sequence + [key_idx])
 
                     cur_sequences = new_sequences
                     last_point = cur_point
@@ -274,33 +274,7 @@ class Keypad:
 
                     candidates.add(candidate)
 
-        return candidates
-
-    def infer_candidates(
-        self,
-        input_points: list[tuple[float, float]],
-        angle_ambiguous_region: float,
-        distance_ambiguous_region: tuple[float, float]
-    ) -> list[str]:
-        if len(input_points) == 0:
-            return []
-        elif len(input_points) == 1:
-            return [key.press("")[0] for key in self.__key_list]
-
-        angle_candidates: set[str] = self.__angle_correlation__(
-            input_points,
-            angle_ambiguous_region
-        )
-
-        if len(input_points) == 2:
-            return list(angle_candidates)
-
-        distance_candidates: set[str] = self.__distance_correlation__(
-            input_points,
-            distance_ambiguous_region
-        )
-
-        return list(angle_candidates.intersection(distance_candidates))
+        return list(candidates)
 
 META_QUEST_3_KEYPAD = Keypad([
     Key(0, 0.5, 0.0, lambda x, _ : x + '0'),
