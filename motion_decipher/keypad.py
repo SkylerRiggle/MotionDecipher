@@ -188,12 +188,18 @@ class Keypad:
         input_points: list[tuple[float, float]],
         angle_ambiguous_region: float,
         distance_ambiguous_region: tuple[float, float]
-    ) -> list[str]:
+    ) -> tuple[list[str], dict[str, float]]:
         if len(input_points) == 0:
-            return []
+            return [], {}
         elif len(input_points) == 1:
-            return [key.press("")[0] for key in self.__key_list]
+            errs_10: dict[str, float] = {}
+            cand_10 = [key.press("")[0] for key in self.__key_list]
+            for candidate in cand_10:
+                errs_10[candidate] = 0.0
 
+            return cand_10, errs_10
+
+        errors: dict[str, float] = {}
         candidates: set[str] = set()
 
         max_point_1 = (0.0, 0.0)
@@ -226,7 +232,7 @@ class Keypad:
                     continue
 
                 last_point = input_points[0]
-                cur_sequences = [[idx] for idx in range(len(self.__key_list))]
+                cur_sequences = [(0.0, [idx]) for idx in range(len(self.__key_list))]
                 for cur_point in input_points[1:]:
                     new_sequences = []
 
@@ -238,33 +244,39 @@ class Keypad:
                         angle_ambiguous_region
                     )
 
-                    for sequence in cur_sequences:
+                    for cur_err, sequence in cur_sequences:
                         last_key_idx = sequence[-1]
 
+                        err_x = abs(dx - self.__distance_map[last_key_idx][last_key_idx][0])
+                        err_y = abs(dy - self.__distance_map[last_key_idx][last_key_idx][1])
+
                         if (
-                            abs(dx - self.__distance_map[last_key_idx][last_key_idx][0]) <=
-                            distance_ambiguous_region[0]
-                            and
-                            abs(dy - self.__distance_map[last_key_idx][last_key_idx][1]) <=
-                            distance_ambiguous_region[1]
+                            err_x <= distance_ambiguous_region[0] and
+                            err_y <= distance_ambiguous_region[1]
                         ):
-                            new_sequences.append(sequence + [last_key_idx])
+                            new_sequences.append((
+                                cur_err + err_x + err_y,
+                                sequence + [last_key_idx]
+                            ))
 
                         for direction in cur_directions:
                             for key_idx in self.__angle_map[last_key_idx][direction]:
+                                err_x = abs(dx - self.__distance_map[last_key_idx][key_idx][0])
+                                err_y = abs(dy - self.__distance_map[last_key_idx][key_idx][1])
+
                                 if (
-                                    abs(dx - self.__distance_map[last_key_idx][key_idx][0]) <=
-                                    distance_ambiguous_region[0]
-                                    and
-                                    abs(dy - self.__distance_map[last_key_idx][key_idx][1]) <=
-                                    distance_ambiguous_region[1]
+                                    err_x <= distance_ambiguous_region[0] and
+                                    err_y <= distance_ambiguous_region[1]
                                 ):
-                                    new_sequences.append(sequence + [key_idx])
+                                    new_sequences.append((
+                                        cur_err + err_x + err_y,
+                                        sequence + [key_idx]
+                                    ))
 
                     cur_sequences = new_sequences
                     last_point = cur_point
 
-                for sequence in cur_sequences:
+                for cur_err, sequence in cur_sequences:
                     last_key_id = None
                     candidate: str = ""
                     for key_idx in sequence:
@@ -274,7 +286,12 @@ class Keypad:
 
                     candidates.add(candidate)
 
-        return list(candidates)
+                    if errors.get(candidate) is None:
+                        errors[candidate] = cur_err
+                    else:
+                        errors[candidate] = min(errors[candidate], cur_err)
+
+        return list(candidates), errors
 
 META_QUEST_3_KEYPAD = Keypad([
     Key(0, 0.5, 0.0, lambda x, _ : x + '0'),

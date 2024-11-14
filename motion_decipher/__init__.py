@@ -16,7 +16,7 @@ class MotionDecipher:
     __plot_estimated_points: bool
     __keypad: Keypad
     __angle_ambiguous_region: float
-    __distance_ambiguous_region: float
+    __distance_ambiguous_region: tuple[float, float]
     __view_angle: float
 
     # TODO: Remove Once Guanchong's Model Is Ready
@@ -56,7 +56,7 @@ class MotionDecipher:
         # TODO: Remove Once Guanchong's Model Is Ready
         self.__TMP_SEGMENT_INDICES = TMP_SEGMENT_INDICES
 
-    def run(self) -> list[str]:
+    def run(self) -> tuple[list[str], dict[str, float]]:
         log_info("Gathering Input Frames.")
         frames = (
             capture_video_file(self.__input_video_path)

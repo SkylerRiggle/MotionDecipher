@@ -30,8 +30,10 @@ def run_test(test_folder_path: str, test_video_name: str):
         mkdir("./output")
 
     out_file = open(f"./output/{case_title}.txt", "w")
-    for sequence in test_case.run():
-        out_file.write(sequence + "\n")
+    sequences, errors = test_case.run()
+    sequences.sort(key=lambda x : errors[x])
+    for sequence in sequences:
+        out_file.write(f"{sequence}, {errors[sequence]}\n")
     out_file.close()
 
 def run_all_tests(test_folder_path: str):
@@ -40,7 +42,10 @@ def run_all_tests(test_folder_path: str):
     for file in in_files:
         counter += 1
         print(f"Processing File {counter} of {len(in_files)}.")
-        run_test(test_folder_path, file)
+        try:
+            run_test(test_folder_path, file)
+        except Exception as e:
+            print(f"An error has occurred...\n{e}")
 
 if __name__ == '__main__':
     test_directory: str | None = None
@@ -51,7 +56,6 @@ if __name__ == '__main__':
             test_directory = arg.replace("dir=", "").strip()
         elif arg.startswith("file="):
             test_filename = arg.replace("file=", "").strip()
-
 
     if test_directory is None:
         print("No Input Directory Specified...")
