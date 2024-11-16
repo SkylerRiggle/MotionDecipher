@@ -30,10 +30,8 @@ def run_test(test_folder_path: str, test_video_name: str):
         mkdir("./output")
 
     out_file = open(f"./output/{case_title}.txt", "w")
-    sequences, errors = test_case.run()
-    sequences.sort(key=lambda x : errors[x])
-    for sequence in sequences:
-        out_file.write(f"{sequence}, {errors[sequence]}\n")
+    for sequence in test_case.run():
+        out_file.write(f"{sequence}\n")
     out_file.close()
 
 def run_all_tests(test_folder_path: str):

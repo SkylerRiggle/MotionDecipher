@@ -56,7 +56,7 @@ class MotionDecipher:
         # TODO: Remove Once Guanchong's Model Is Ready
         self.__TMP_SEGMENT_INDICES = TMP_SEGMENT_INDICES
 
-    def run(self) -> tuple[list[str], dict[str, float]]:
+    def run(self) -> list[str]:
         log_info("Gathering Input Frames.")
         frames = (
             capture_video_file(self.__input_video_path)

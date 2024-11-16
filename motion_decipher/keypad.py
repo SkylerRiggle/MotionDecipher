@@ -188,18 +188,12 @@ class Keypad:
         input_points: list[tuple[float, float]],
         angle_ambiguous_region: float,
         distance_ambiguous_region: tuple[float, float]
-    ) -> tuple[list[str], dict[str, float]]:
+    ) -> list[str]:
         if len(input_points) == 0:
-            return [], {}
+            return []
         elif len(input_points) == 1:
-            errs_10: dict[str, float] = {}
-            cand_10 = [key.press("")[0] for key in self.__key_list]
-            for candidate in cand_10:
-                errs_10[candidate] = 0.0
+            return [key.press("")[0] for key in self.__key_list]
 
-            return cand_10, errs_10
-
-        errors: dict[str, float] = {}
         candidates: set[str] = set()
 
         max_point_1 = (0.0, 0.0)
@@ -286,12 +280,7 @@ class Keypad:
 
                     candidates.add(candidate)
 
-                    if errors.get(candidate) is None:
-                        errors[candidate] = cur_err
-                    else:
-                        errors[candidate] = min(errors[candidate], cur_err)
-
-        return list(candidates), errors
+        return list(candidates)
 
 META_QUEST_3_KEYPAD = Keypad([
     Key(0, 0.5, 0.0, lambda x, _ : x + '0'),
