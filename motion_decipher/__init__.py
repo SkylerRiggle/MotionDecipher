@@ -178,7 +178,7 @@ class MotionDecipher:
             plt.plot(plot_x, plot_y)
             plt.show()
 
-        min_list: list[str] = []
+        min_list: list[str] | None = None
 
         for distance_ambiguous_region in self.__distance_ambiguous_regions:
             for angle_ambiguous_region in self.__angle_ambiguous_regions:
@@ -188,7 +188,10 @@ class MotionDecipher:
                     distance_ambiguous_region
                 )
 
-                if len(cur_list) > len(min_list):
+                if self.__target_string not in cur_list:
+                    continue
+
+                if min_list is None or len(cur_list) < len(min_list):
                     min_list = cur_list
 
-        return min_list
+        return min_list if min_list is not None else []
