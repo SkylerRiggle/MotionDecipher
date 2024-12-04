@@ -19,8 +19,14 @@ def run_test(test_folder_path: str, test_video_name: str):
         save_segments = False,
         plot_estimated_points = False,
         target_keypad = META_QUEST_3_KEYPAD,
-        angle_ambiguous_region = 22.5,
-        distance_ambiguous_region = (0.75, 0.5),
+        target_string = case_title,
+        angle_ambiguous_regions = [15.0, 22.5],
+        distance_ambiguous_regions = [
+            (0.25, 0.17),
+            (0.375, 0.25),
+            (0.5, 0.34),
+            (0.75, 0.5),
+        ],
         camera_view_angle = 90.0,
 
         TMP_SEGMENT_INDICES = get_label(case_title)

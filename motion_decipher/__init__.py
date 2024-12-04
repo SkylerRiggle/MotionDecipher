@@ -15,8 +15,9 @@ class MotionDecipher:
     __save_segments: bool
     __plot_estimated_points: bool
     __keypad: Keypad
-    __angle_ambiguous_region: float
-    __distance_ambiguous_region: tuple[float, float]
+    __target_string: str
+    __angle_ambiguous_regions: list[float]
+    __distance_ambiguous_regions: list[tuple[float, float]]
     __view_angle: float
 
     # TODO: Remove Once Guanchong's Model Is Ready
@@ -34,8 +35,9 @@ class MotionDecipher:
         save_segments: bool = False,
         plot_estimated_points: bool = False,
         target_keypad: Keypad = META_QUEST_3_KEYPAD,
-        angle_ambiguous_region: float = 15.0,
-        distance_ambiguous_region: tuple[float, float] = (0.5, 1/3),
+        target_string: str = '0000',
+        angle_ambiguous_regions: list[float] | None = None,
+        distance_ambiguous_regions: list[tuple[float, float]] = None,
         camera_view_angle: float = 90
     ):
         self.__input_video_path = input_video_path
@@ -45,8 +47,15 @@ class MotionDecipher:
         self.__save_segments = save_segments
         self.__plot_estimated_points = plot_estimated_points
         self.__keypad = target_keypad
-        self.__angle_ambiguous_region = angle_ambiguous_region
-        self.__distance_ambiguous_region = distance_ambiguous_region
+        self.__target_string = target_string
+        self.__angle_ambiguous_regions = (
+            angle_ambiguous_regions if angle_ambiguous_regions is not None
+            else [15.0]
+        )
+        self.__distance_ambiguous_regions = (
+            distance_ambiguous_regions if distance_ambiguous_regions is not None
+            else [0.5, 1/3]
+        )
         self.__view_angle = camera_view_angle
 
         while self.__view_angle < 0.0:
@@ -169,8 +178,17 @@ class MotionDecipher:
             plt.plot(plot_x, plot_y)
             plt.show()
 
-        return self.__keypad.infer_candidates(
-            input_points,
-            self.__angle_ambiguous_region,
-            self.__distance_ambiguous_region
-        )
+        min_list: list[str] = []
+
+        for distance_ambiguous_region in self.__distance_ambiguous_regions:
+            for angle_ambiguous_region in self.__angle_ambiguous_regions:
+                cur_list = self.__keypad.infer_candidates(
+                    input_points,
+                    angle_ambiguous_region,
+                    distance_ambiguous_region
+                )
+
+                if len(cur_list) > len(min_list):
+                    min_list = cur_list
+
+        return min_list
